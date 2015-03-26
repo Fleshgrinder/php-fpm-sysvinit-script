@@ -2,7 +2,7 @@
 [Linux Standard Base (LSB)](http://www.linuxfoundation.org/collaborate/workgroups/lsb) compliant [SysVinit]
 (http://freecode.com/projects/sysvinit) script for [php-fpm](https://php.net/install.fpm).
 
-I created this init script mainly because the PHP shipped init script is an awful hack.
+I created this init script because the PHP shipped init script is an awful hack.
 
 ## Install
 ```shell
@@ -12,9 +12,9 @@ chown root:root /etc/init.d/php-fpm
 update-rc.d php-fpm defaults
 ```
 
-You can also clone the repository and just execute the `make`, but please note that this will install the
+You can also clone the repository and just execute the `make` command, but please note that this will install the
 `/etc/default/php-fpm` file as well (which sets a different location for the configuration file, based on my personal
-PHP configuration layout.
+PHP configuration layout).
 
 ## Usage
 You can use it via the `service` command or by directly invoking the shell script in `/etc/init.d`; what you like best. 

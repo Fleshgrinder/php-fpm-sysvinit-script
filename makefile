@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # ----------------------------------------------------------------------------------------------------------------------
 # This is free and unencumbered software released into the public domain.
 #
@@ -26,10 +28,13 @@
 # LINK:       http://richard.fussenegger.info/
 # ----------------------------------------------------------------------------------------------------------------------
 
+SHELL = /bin/sh
+.SUFFIXES:
+
 install:
 	install -D --mode=0644 --owner=root --group=root -- '$(CURDIR)'/default.sh /etc/default/php-fpm
 	install -D --mode=0755 --owner=root --group=root -- '$(CURDIR)'/init.sh /etc/init.d/php-fpm
 	update-rc.d php-fpm defaults
 
-clean:
+uninstall:
 	rm --force -- /etc/default/php-fpm /etc/init.d/php-fpm

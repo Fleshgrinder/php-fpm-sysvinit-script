@@ -32,8 +32,8 @@ SHELL = /bin/sh
 .SUFFIXES:
 
 install:
-	install -D --mode=0644 --owner=root --group=root -- '$(CURDIR)'/default.sh /etc/default/php-fpm
-	install -D --mode=0755 --owner=root --group=root -- '$(CURDIR)'/init.sh /etc/init.d/php-fpm
+	install -D --mode=0644 --owner=root --group=root -- ./default.sh /etc/default/php-fpm
+	install -D --mode=0755 --owner=root --group=root -- ./init.sh /etc/init.d/php-fpm
 	update-rc.d php-fpm defaults
 
 uninstall:

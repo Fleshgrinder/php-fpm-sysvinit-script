@@ -55,11 +55,21 @@ readonly NAME=php-fpm
 # Arguments that should be passed to the executable.
 DAEMON_ARGS=
 
+# Absolute path to the printf executable.
+readonly PRINT=/usr/bin/printf
+
 # Absolute path to the PID file.
-PIDFILE=$( printf -- '%s/run/%s.pid' "$([ -d /run ] || printf -- /var)" "${NAME}" )
+PIDFILE=/run/${NAME}.pid
+
+# The usage string.
+readonly USAGE="Usage: $0 {start|stop|restart|try-restart|reload|force-reload|status}"
 
 # Will be set by /lib/init/vars.sh
 VERBOSE=no
+
+# Absolute path to the which executable.
+readonly WHICH=/usr/bin/which
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 #                                                                                                            Error Codes
@@ -68,14 +78,14 @@ VERBOSE=no
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+readonly EC_INVALID_ARGUMENT=2
 readonly EC_SUPER_USER_ONLY=4
-readonly EC_DAEMON_NOT_FOUND=65
-readonly EC_RELOADING_FAILED=66
-readonly EC_RESTART_STOP_FAILED=67
-readonly EC_RESTART_START_FAILED=68
-readonly EC_START_FAILED=69
-readonly EC_STOP_FAILED=70
-readonly EC_INVALID_ARGUMENT=71
+readonly EC_DAEMON_NOT_FOUND=5
+readonly EC_RELOADING_FAILED=95
+readonly EC_RESTART_STOP_FAILED=96
+readonly EC_RESTART_START_FAILED=97
+readonly EC_START_FAILED=98
+readonly EC_STOP_FAILED=99
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -86,32 +96,39 @@ readonly EC_INVALID_ARGUMENT=71
 # Exit the script with an error code.
 die()
 {
-    log_end_msg ${1}
-    exit ${1}
+    log_end_msg $1
+    exit $1
 }
 
 # End the script.
 end()
 {
-    [ "${VERBOSE}" != no ] && log_end_msg 0 || exit 0
+    [ "${VERBOSE}" != no ] && log_end_msg 0
+    exit 0
 }
 
 # Display failure message.
 fail()
 {
-    log_failure_msg "${NAME}" "${1}"
+    log_failure_msg "${NAME}" "$1"
 }
 
 # Display informational message.
 info()
 {
-    [ "${VERBOSE}" != no ] && log_daemon_msg "${NAME}" "${1}"
+    [ "${VERBOSE}" != no ] && log_daemon_msg "${NAME}" "$1"
 }
 
 # Display success message.
 ok()
 {
-    [ "${VERBOSE}" != no ] && log_success_msg "${NAME}" "${1}"
+    [ "${VERBOSE}" != no ] && log_success_msg "${NAME}" "$1"
+}
+
+# Display warning message.
+warn()
+{
+    log_warning_msg "${NAME}" "$1"
 }
 
 ###
@@ -125,7 +142,7 @@ check_privileges()
     if [ $(id -u) -ne 0 ]
     then
         fail 'super user only!'
-        exit ${EC_SUPER_USER_ONLY}
+        die ${EC_SUPER_USER_ONLY}
     fi
 }
 
@@ -171,14 +188,12 @@ stop_service()
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-# Load the VERBOSE setting and other rcS variables.
-. /lib/init/vars.sh
+# Load the VERBOSE setting and other rcS variables plus any script defaults.
+for INCLUDE in /lib/init/vars.sh /etc/default/php-fpm
+    do [ -r "${INCLUDE}" ] && . "${INCLUDE}"
+done
 
-# Load the LSB log_* functions.
-. /lib/lsb/init-functions
-
-# Load defaults, if applicable.
-[ -f /etc/default/php-fpm ] && . /etc/default/php-fpm
+# Make all variables which are allowed to be altered by the defaults file as read-only.
 readonly DAEMON_ARGS
 readonly PIDFILE
 
@@ -188,16 +203,44 @@ readonly PIDFILE
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-# Check if daemon is a recognized program and get absolute path.
-readonly DAEMON=$(command -v "${NAME}")
-if [ "${DAEMON}" = '' ]
+# Load the LSB log_* functions.
+INCLUDE=/lib/lsb/init/functions
+if [ -r "${INCLUDE}" ]
 then
-    fail 'not found!'
-    exit ${EC_DAEMON_NOT_FOUND}
+    . "${INCLUDE}"
+else
+    "${PRINT}" '%s: unable to load LSB functions, cannot start service.\n' "${NAME}" 1>&2
+    die ${EC_DAEMON_NOT_FOUND}
+fi
+
+# Make sure only one argument was passed to the script.
+if [ $# -ne 1 ]
+then
+    if [ $# -lt 1 -o "$1" = '' ]
+        then fail 'action not specified.'
+        else fail 'too many arguments.'
+    fi
+    warn "${USAGE}"
+    die ${EC_INVALID_ARGUMENT}
+fi
+readonly ACTION="$1"
+
+# Check if daemon is a recognized program and get absolute path.
+readonly DAEMON=$("${WHICH}" "${NAME}")
+if [ ! -x "${DAEMON}" ]
+then
+    if [ "${ACTION}" = 'stop' ]
+    then
+        warn 'executable not found: stop request ignored'
+        end
+    else
+        fail "executable not found: cannot ${ACTION} service"
+        die ${EC_DAEMON_NOT_FOUND}
+    fi
 fi
 
 # Default options for start-stop-daemon command.
-readonly SSD_OPTIONS="--quiet --oknodo --pidfile ${PIDFILE} --exec ${DAEMON} --name ${NAME}"
+readonly SSD_OPTIONS="--quiet --oknodo --pidfile '${PIDFILE}' --exec '${DAEMON}' --name '${NAME}'"
 
 # Determine the service's status.
 #
@@ -206,7 +249,7 @@ readonly SSD_OPTIONS="--quiet --oknodo --pidfile ${PIDFILE} --exec ${DAEMON} --n
 #   3 = Porgram is not running.
 #   4 = Unable to determine status.
 start-stop-daemon --status ${SSD_OPTIONS} 2>/dev/null 1>/dev/null
-readonly STATUS=${?}
+readonly STATUS=$?
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -214,19 +257,21 @@ readonly STATUS=${?}
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-case "${1}" in
+case "${ACTION}" in
 
+    # Reload the configuration, if the service is running, otherwise do nothing.
     force-reload|reload)
         check_privileges
         if [ ${STATUS} -eq 0 ]
         then
             info 'reloading configuration ...'
-            reload_service && end || die ${EC_RELOADING_FAILED}
+            reload_service || die ${EC_RELOADING_FAILED}
         else
-            fail 'not running!'
+            info 'service not running, nothing to be done.'
         fi
     ;;
 
+    # Restart the service, if the service is already running, otherwise start the service.
     restart)
         check_privileges
         if [ ${STATUS} -eq 0 ]
@@ -234,12 +279,11 @@ case "${1}" in
             info 'restarting service ...'
             stop_service || die ${EC_RESTART_STOP_FAILED}
             sleep 0.1
-            start_service && end || die ${EC_RESTART_START_FAILED}
-        else
-            fail 'not running!'
         fi
+        start_service || die ${EC_RESTART_START_FAILED}
     ;;
 
+    # Start the service, do nothing if it is already running.
     start)
         check_privileges
         if [ ${STATUS} -eq 0 ]
@@ -247,31 +291,54 @@ case "${1}" in
             ok 'already started.'
         else
             info 'starting ...'
-            start_service && end || die ${EC_START_FAILED}
+            start_service || die ${EC_START_FAILED}
         fi
     ;;
 
+    # Print service status.
+    #
+    # This can be invoked by any user and has different exit codes:
+    #   0 - running and OK
+    #   1 - dead and /var/run PID file exists
+    #   2 - dead and /var/lock lock file exists
+    #   3 - not running
+    #   4 - unknown
     status)
-        status_of_proc "${DAEMON}" "${NAME}" || exit ${?}
+        status_of_proc "${DAEMON}" "${NAME}" || exit $?
     ;;
 
+    # Stop the service, do nothing if it is already stopped.
     stop)
         check_privileges
         if [ ${STATUS} -eq 0 ]
         then
             info 'stopping ...'
-            stop_service && end || die ${EC_STOP_FAILED}
+            stop_service || die ${EC_STOP_FAILED}
         else
             info 'already stopped.'
         fi
     ;;
 
+    # Restart the service, if the service is already running, otherwise do nothing.
+    try-restart)
+        check_privileges
+        if [ ${STATUS} -eq 0 ]
+        then
+            info 'restarting service ...'
+            stop_service || die ${EC_RESTART_STOP_FAILED}
+            sleep 0.1
+            start_service || die ${EC_RESTART_START_FAILED}
+        else
+            info 'service not running, nothing to be done.'
+        fi
+    ;;
+
     *)
-        printf -- 'Usage: %s {force-reload|reload|restart|start|status|stop}\n' \
-            $(cd -- "$(dirname -- "${0}")"; pwd)/$(basename -- "${0}") >&2
+        fail "action '${ACTION}' not recognized."
+        warn "${USAGE}"
         exit ${EC_INVALID_ARGUMENT}
     ;;
 
 esac
 
-exit 0
+end

@@ -30,8 +30,8 @@
 
 # Canonical absolute path to the PID file.
 #
-# Note that init script will determine the path itself if not set (usually you do not want to set this).
-#PIDFILE=/run/php-fpm.pid
+# DEFAULT: /run/php-fpm.pid
+#PIDFILE=
 
 # Arguments that should be passed to the daemon, in this case php-fpm. The
 # following arguments were supported in the latest version (which was 5.6.7
@@ -54,5 +54,5 @@
 #  -O, --force-stderr          Force output to stderr in nodaemonize even if stderr is not a TTY
 #  -R, --allow-to-run-as-root  Allow pool to run as root (disabled by default)
 #
-# Note that the init script does not pass ANY arguments by default.
+# DEFAULT: ''
 DAEMON_ARGS='--fpm-config /etc/php/fpm.ini'

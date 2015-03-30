@@ -37,4 +37,5 @@ install:
 	update-rc.d php-fpm defaults
 
 uninstall:
+	update-rc.d -f php-fpm remove
 	rm --force -- /etc/default/php-fpm /etc/init.d/php-fpm

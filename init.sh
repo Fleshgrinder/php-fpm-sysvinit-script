@@ -204,13 +204,13 @@ readonly PIDFILE
 
 
 # Load the LSB log_* functions.
-INCLUDE=/lib/lsb/init/functions
+INCLUDE=/lib/lsb/init-functions
 if [ -r "${INCLUDE}" ]
 then
     . "${INCLUDE}"
 else
     "${PRINT}" '%s: unable to load LSB functions, cannot start service.\n' "${NAME}" 1>&2
-    die ${EC_DAEMON_NOT_FOUND}
+    exit ${EC_DAEMON_NOT_FOUND}
 fi
 
 # Make sure only one argument was passed to the script.

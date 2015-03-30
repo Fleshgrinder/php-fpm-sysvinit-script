@@ -20,7 +20,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Defaults for php-fpm init script.
+# Defaults for php-fpm SysVinit script.
 #
 # AUTHOR:     Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT:  2015 Richard Fussenegger
@@ -30,8 +30,8 @@
 
 # Canonical absolute path to the PID file.
 #
-# DEFAULT: /run/php-fpm.pid
-#PIDFILE=/var/run/php-fpm.pid
+# The default PID path depends on the environment an is either /var/run/php-fpm.pid or /run/php-fpm.pid.
+#PIDFILE=
 
 # Arguments that should be passed to the daemon, in this case php-fpm. The following arguments were supported in the
 # latest version (which was 5.6.7 while I was writing this):
@@ -54,7 +54,7 @@
 #  -R, --allow-to-run-as-root  Allow pool to run as root (disabled by default)
 #
 # DEFAULT: ''
-DAEMON_ARGS='--fpm-config /etc/php/fpm.ini'
+#DAEMON_ARGS='--fpm-config /etc/php/fpm.ini'
 
 # The verbose setting of the init script is controlled by environment variables. This variable allows overriding this
 # setting for the init script.

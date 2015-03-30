@@ -31,11 +31,15 @@
 SHELL = /bin/sh
 .SUFFIXES:
 
+DAEMON  := php-fpm
+INIT    := /etc/init.d/$(DAEMON)
+DEFAULT := /etc/default/$(DAEMON)
+
 install:
-	install -D --mode=0644 --owner=root --group=root -- ./default.sh /etc/default/php-fpm
-	install -D --mode=0755 --owner=root --group=root -- ./init.sh /etc/init.d/php-fpm
-	update-rc.d php-fpm defaults
+	install -D --mode=0644 --owner=root --group=root -- ./defaults $(DEFAULT)
+	install -D --mode=0755 --owner=root --group=root -- ./init $(INIT)
+	update-rc.d $(DAEMON) defaults
 
 uninstall:
-	update-rc.d -f php-fpm remove
-	rm --force -- /etc/default/php-fpm /etc/init.d/php-fpm
+	update-rc.d -f $(DAEMON) remove
+	rm --force -- $(INIT) $(DEFAULT)

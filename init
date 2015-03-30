@@ -32,7 +32,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-# php-fpm Linux Standards Base compliant init script.
+# php-fpm Linux Standards Base compliant SysVinit script.
 #
 # SEE: https://wiki.debian.org/LSBInitScripts
 # SEE: http://tldp.org/LDP/abs/html/exitcodes.html
@@ -59,7 +59,7 @@ DAEMON_ARGS=
 readonly PRINT=/usr/bin/printf
 
 # Absolute path to the PID file.
-PIDFILE=/run/${NAME}.pid
+PIDFILE=$(printf -- '%s/run/%s.pid' "$([ -d /run ] || printf -- /var)" "${NAME}")
 
 # Will be set by /lib/init/vars.sh
 VERBOSE=no
@@ -192,7 +192,7 @@ stop_service()
 
 
 # Load the VERBOSE setting and other rcS variables plus any script defaults.
-for INCLUDE in /lib/init/vars.sh /etc/default/php-fpm
+for INCLUDE in /lib/init/vars.sh /etc/default/$(NAME)
     do [ -r "${INCLUDE}" ] && . "${INCLUDE}"
 done
 

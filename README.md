@@ -6,10 +6,10 @@ I created this init script because the PHP shipped init script is an awful hack.
 
 ## Install
 ```shell
-wget -O /etc/init.d/php-fpm https://raw.githubusercontent.com/Fleshgrinder/php-fpm-sysvinit-script/master/init.sh
-chmod 0755 /etc/init.d/php-fpm
-chown root:root /etc/init.d/php-fpm
-update-rc.d php-fpm defaults
+git clone https://github.com/Fleshgrinder/php-fpm-sysvinit-script.git
+cd php-fpm-sysvinit-script
+make
+#make uninstall
 ```
 
 You can also clone the repository and just execute the `make` command, but please note that this will install the
@@ -25,6 +25,7 @@ php-fpm res` just hit tab for auto-completion.
 service php-fpm force-reload
 service php-fpm reload
 service php-fpm restart
+service php-fpm try-restart
 service php-fpm start
 service php-fpm status
 service php-fpm stop

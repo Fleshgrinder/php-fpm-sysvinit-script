@@ -31,11 +31,10 @@
 # Canonical absolute path to the PID file.
 #
 # DEFAULT: /run/php-fpm.pid
-#PIDFILE=
+#PIDFILE=/var/run/php-fpm.pid
 
-# Arguments that should be passed to the daemon, in this case php-fpm. The
-# following arguments were supported in the latest version (which was 5.6.7
-# while I was writing this):
+# Arguments that should be passed to the daemon, in this case php-fpm. The following arguments were supported in the
+# latest version (which was 5.6.7 while I was writing this):
 #
 #  -c <path>|<file>            Look for php.ini file in this directory
 #  -n                          No php.ini file will be used
@@ -56,3 +55,9 @@
 #
 # DEFAULT: ''
 DAEMON_ARGS='--fpm-config /etc/php/fpm.ini'
+
+# The verbose setting of the init script is controlled by environment variables. This variable allows overriding this
+# setting for the init script.
+#
+# DEFAULT: no
+#VERBOSE=yes

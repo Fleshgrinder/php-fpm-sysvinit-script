@@ -61,9 +61,6 @@ readonly PRINT=/usr/bin/printf
 # Absolute path to the PID file.
 PIDFILE=/run/${NAME}.pid
 
-# The usage string.
-readonly USAGE="Usage: $0 {start|stop|restart|try-restart|reload|force-reload|status}"
-
 # Will be set by /lib/init/vars.sh
 VERBOSE=no
 
@@ -129,6 +126,12 @@ ok()
 warn()
 {
     log_warning_msg "${NAME}" "$1"
+}
+
+# Print usage string.
+usage()
+{
+    "${PRINT}" 'Usage: %s {start|stop|restart|try-restart|reload|force-reload|status}\n' "$0"
 }
 
 ###
@@ -220,7 +223,7 @@ then
         then fail 'action not specified.'
         else fail 'too many arguments.'
     fi
-    warn "${USAGE}"
+    usage 1>&2
     die ${EC_INVALID_ARGUMENT}
 fi
 readonly ACTION="$1"
@@ -240,7 +243,7 @@ then
 fi
 
 # Default options for start-stop-daemon command.
-readonly SSD_OPTIONS="--quiet --oknodo --pidfile '${PIDFILE}' --exec '${DAEMON}' --name '${NAME}'"
+readonly SSD_OPTIONS="--quiet --oknodo --pidfile "${PIDFILE}" --exec "${DAEMON}" --name "${NAME}""
 
 # Determine the service's status.
 #
@@ -333,9 +336,13 @@ case "${ACTION}" in
         fi
     ;;
 
+    -h|--help)
+        usage
+    ;;
+
     *)
         fail "action '${ACTION}' not recognized."
-        warn "${USAGE}"
+        usage 1>&2
         exit ${EC_INVALID_ARGUMENT}
     ;;
 

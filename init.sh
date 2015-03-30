@@ -63,10 +63,12 @@ VERBOSE=no
 
 # ----------------------------------------------------------------------------------------------------------------------
 #                                                                                                            Error Codes
+#
+# SEE: http://refspecs.linuxfoundation.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-readonly EC_SUPER_USER_ONLY=64
+readonly EC_SUPER_USER_ONLY=4
 readonly EC_DAEMON_NOT_FOUND=65
 readonly EC_RELOADING_FAILED=66
 readonly EC_RESTART_STOP_FAILED=67
@@ -110,6 +112,21 @@ info()
 ok()
 {
     [ "${VERBOSE}" != no ] && log_success_msg "${NAME}" "${1}"
+}
+
+###
+# Check privileges of caller. This will automatically exit if the caller has insufficient privileges.
+#
+# RETURN:
+#   0 - sufficient privileges
+###
+check_privileges()
+{
+    if [ $(id -u) -ne 0 ]
+    then
+        fail 'super user only!'
+        exit ${EC_SUPER_USER_ONLY}
+    fi
 }
 
 ###
@@ -171,13 +188,6 @@ readonly PIDFILE
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-# This script is only accessible for root (sudo).
-if [ $(id -u) -ne 0 ]
-then
-    fail 'super user only!'
-    exit ${EC_SUPER_USER_ONLY}
-fi
-
 # Check if daemon is a recognized program and get absolute path.
 readonly DAEMON=$(command -v "${NAME}")
 if [ "${DAEMON}" = '' ]
@@ -207,6 +217,7 @@ readonly STATUS=${?}
 case "${1}" in
 
     force-reload|reload)
+        check_privileges
         if [ ${STATUS} -eq 0 ]
         then
             info 'reloading configuration ...'
@@ -217,6 +228,7 @@ case "${1}" in
     ;;
 
     restart)
+        check_privileges
         if [ ${STATUS} -eq 0 ]
         then
             info 'restarting service ...'
@@ -229,6 +241,7 @@ case "${1}" in
     ;;
 
     start)
+        check_privileges
         if [ ${STATUS} -eq 0 ]
         then
             ok 'already started.'
@@ -243,6 +256,7 @@ case "${1}" in
     ;;
 
     stop)
+        check_privileges
         if [ ${STATUS} -eq 0 ]
         then
             info 'stopping ...'
